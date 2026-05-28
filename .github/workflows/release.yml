@@ -13,7 +13,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        # macOS dropped 2026-05-28: hdiutil + distutils issues on the
+        # GitHub-hosted arm64 runner break pcsclite/electron-builder.
+        # Windows is the primary target — re-add macos-13 (intel) once
+        # we have a fix for the native rebuild.
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
