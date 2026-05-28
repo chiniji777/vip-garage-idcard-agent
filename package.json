@@ -1,6 +1,6 @@
 {
   "name": "vip-garage-idcard-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local HTTP bridge that reads Thai national ID cards via PC/SC and exposes them to the VIP Garage web app",
   "private": true,
   "main": "dist/main.js",
