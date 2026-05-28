@@ -13,9 +13,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-13 (Intel) instead of macos-latest (arm64): arm64 runner
-        # 2026-05-28 broke pcsclite + hdiutil. Revisit when GH stabilises.
-        os: [windows-latest, macos-13]
+        # macos-latest (currently arm64 Apple Silicon) + windows-latest.
+        # We drop the Intel-mac target — every Mac sold since late 2020
+        # is Apple Silicon, so an arm64-only DMG keeps CI fast and avoids
+        # the cross-arch node-gyp/distutils flakiness we hit on v0.1.0-1.
+        os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -24,23 +26,17 @@ jobs:
         with:
           node-version: "20"
 
-      # Python 3.12+ removed distutils. node-gyp still needs it for native
-      # rebuilds — point it at a Python with setuptools (provides a
-      # distutils shim). Pin 3.11 for safety on Mac runners.
-      - name: Set up Python (macOS)
-        if: matrix.os == 'macos-13'
+      # Python 3.12+ removed distutils — node-gyp (used by electron-rebuild
+      # when building pcsclite) still imports it. Pin 3.11 so the bundled
+      # stdlib carries distutils. Applies on every OS for consistency.
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install Linux PC/SC deps
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libpcsclite-dev
-
       - name: Install
-        # No lockfile in the repo (we use bun locally), so install from
-        # package.json fresh — npm install is fine for CI and avoids
-        # the setup-node `cache: npm` requirement.
+        # No lockfile in the repo (bun-only locally), so install fresh —
+        # npm install avoids the setup-node `cache: npm` requirement.
         run: npm install --no-audit --no-fund
 
       - name: Rebuild native modules for Electron
@@ -50,9 +46,11 @@ jobs:
         run: npm run build
 
       - name: Package + publish (macOS)
-        if: matrix.os == 'macos-13'
+        if: startsWith(matrix.os, 'macos')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No Apple Developer ID configured yet — skip code signing.
+          # Users will need to right-click → Open on first launch.
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npx electron-builder --mac --publish always
 

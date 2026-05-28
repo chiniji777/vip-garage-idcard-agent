@@ -1,6 +1,6 @@
 {
   "name": "vip-garage-idcard-agent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local HTTP bridge that reads Thai national ID cards via PC/SC and exposes them to the VIP Garage web app",
   "private": true,
   "main": "dist/main.js",
@@ -50,7 +50,7 @@
     "mac": {
       "category": "public.app-category.utilities",
       "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] }
+        { "target": "dmg", "arch": ["arm64"] }
       ]
     },
     "win": {
