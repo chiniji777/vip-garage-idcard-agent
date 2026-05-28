@@ -87,10 +87,10 @@ app.whenReady().then(async () => {
   await startServer();
 });
 
-app.on("window-all-closed", (e: Event) => {
-  // Don't quit when there are no windows — we never had any.
-  e.preventDefault();
-});
+// Don't quit when there are no windows — this is a tray-only app.
+// Electron's window-all-closed event provides no `event` arg, so just
+// no-op to suppress the default quit behaviour.
+app.on("window-all-closed", () => {});
 
 app.on("before-quit", async () => {
   if (httpHandle) {
