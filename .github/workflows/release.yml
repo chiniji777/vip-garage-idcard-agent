@@ -13,11 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macOS dropped 2026-05-28: hdiutil + distutils issues on the
-        # GitHub-hosted arm64 runner break pcsclite/electron-builder.
-        # Windows is the primary target — re-add macos-13 (intel) once
-        # we have a fix for the native rebuild.
-        os: [windows-latest]
+        # macos-13 (Intel) instead of macos-latest (arm64): arm64 runner
+        # 2026-05-28 broke pcsclite + hdiutil. Revisit when GH stabilises.
+        os: [windows-latest, macos-13]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +23,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      # Python 3.12+ removed distutils. node-gyp still needs it for native
+      # rebuilds — point it at a Python with setuptools (provides a
+      # distutils shim). Pin 3.11 for safety on Mac runners.
+      - name: Set up Python (macOS)
+        if: matrix.os == 'macos-13'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Install Linux PC/SC deps
         if: matrix.os == 'ubuntu-latest'
@@ -43,7 +50,7 @@ jobs:
         run: npm run build
 
       - name: Package + publish (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-13'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
