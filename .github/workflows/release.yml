@@ -21,14 +21,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install Linux PC/SC deps
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y libpcsclite-dev
 
       - name: Install
-        run: npm ci --no-audit --no-fund
+        # No lockfile in the repo (we use bun locally), so install from
+        # package.json fresh — npm install is fine for CI and avoids
+        # the setup-node `cache: npm` requirement.
+        run: npm install --no-audit --no-fund
 
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild
