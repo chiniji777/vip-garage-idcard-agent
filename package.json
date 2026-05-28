@@ -1,0 +1,76 @@
+{
+  "name": "vip-garage-idcard-agent",
+  "version": "0.1.0",
+  "description": "Local HTTP bridge that reads Thai national ID cards via PC/SC and exposes them to the VIP Garage web app",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "rebuild": "electron-rebuild",
+    "start": "npm run build && electron .",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac"
+  },
+  "author": "VIP Garage / Iris-family",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "electron-store": "^10.0.0",
+    "express": "^4.21.2",
+    "thai-id-card-reader": "^1.0.54"
+  },
+  "build": {
+    "appId": "tech.mytestingserver.vip-garage.idcard-agent",
+    "productName": "VIP Garage ID Card Agent",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ]
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "VIP Garage ID Agent"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "chiniji777",
+        "repo": "vip-garage-idcard-agent"
+      }
+    ]
+  }
+}
