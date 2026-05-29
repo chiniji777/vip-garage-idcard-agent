@@ -24,18 +24,37 @@ type ReaderInstance = {
   onReadError: (cb: (err: unknown) => void) => void;
 };
 
-type ReaderModule = {
-  ThaiIdCardReader: new (opts?: {
-    insertCardDelay?: number;
-    readTimeout?: number;
-  }) => ReaderInstance;
-};
+type ReaderCtor = new (opts?: {
+  insertCardDelay?: number;
+  readTimeout?: number;
+}) => ReaderInstance;
 
-let cached: ReaderModule | null = null;
+let cached: ReaderCtor | null = null;
 
-async function loadLib(): Promise<ReaderModule> {
+async function loadReaderCtor(): Promise<ReaderCtor> {
   if (cached) return cached;
-  cached = (await import("thai-id-card-reader")) as unknown as ReaderModule;
+  // The package's "main" (build/src/index.js) is a stale standalone script:
+  // it exports nothing usable AND eager-requires a missing ../config.json
+  // (→ "Cannot find module" then "ThaiIdCardReader is not a constructor").
+  // The real public API is build/index.js — it exports `ThaiIdCardReader`
+  // (matches the package's own index.d.ts + demo) and its send-to-server
+  // takes options, so it never touches config.json. Import it explicitly and
+  // resolve the constructor defensively across CJS/ESM interop.
+  const mod = (await import("thai-id-card-reader/build/index")) as unknown as {
+    ThaiIdCardReader?: ReaderCtor;
+    default?: { ThaiIdCardReader?: ReaderCtor } | ReaderCtor;
+  };
+  const fromDefault =
+    typeof mod.default === "function"
+      ? (mod.default as ReaderCtor)
+      : mod.default?.ThaiIdCardReader;
+  const Ctor = mod.ThaiIdCardReader ?? fromDefault;
+  if (typeof Ctor !== "function") {
+    throw new Error(
+      "thai-id-card-reader: ไม่พบ ThaiIdCardReader constructor ในไลบรารี",
+    );
+  }
+  cached = Ctor;
   return cached;
 }
 
@@ -99,8 +118,8 @@ function splitFullName(full: string | undefined): {
 }
 
 async function readOnce(): Promise<SmartCardData> {
-  const lib = await loadLib();
-  const reader = new lib.ThaiIdCardReader({
+  const Ctor = await loadReaderCtor();
+  const reader = new Ctor({
     insertCardDelay: 200,
     readTimeout: READER_TIMEOUT_MS,
   });
